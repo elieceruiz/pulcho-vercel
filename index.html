@@ -14,29 +14,44 @@
         notifyButton: { enable: true }
       });
 
-      // 🔥 esto sí es oficial
+      console.log("🚀 OneSignal iniciado");
+
+      // 🔥 ESPERAR a que OneSignal esté listo DE VERDAD
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       const permission = OneSignal.Notifications.permission;
-      const isSubscribed = await OneSignal.User.PushSubscription.optedIn;
+      const subscription = OneSignal.User.PushSubscription;
 
       console.log("Permiso:", permission);
+      console.log("Suscripción:", subscription);
+
+      // 🔥 ESTE ES EL DATO CLAVE
+      const playerId = subscription.id;
+      const isSubscribed = subscription.optedIn;
+
+      console.log("Player ID:", playerId);
       console.log("Suscrito:", isSubscribed);
 
-      // ✅ REDIRECCIÓN LIMPIA
-      if (isSubscribed && !window.location.href.includes("streamlit")) {
-        console.log("🔁 Redirigiendo a Streamlit...");
-        window.location.href = "https://pulcho.streamlit.app/";
+      // 🚨 SI NO HAY ID → NO EXISTES
+      if (!playerId) {
+        console.log("❌ No hay player_id → no registrado");
+
+        if (permission === "default") {
+          console.log("🔔 Mostrando prompt...");
+          OneSignal.Slidedown.promptPush();
+        }
+
         return;
       }
 
-      // 🆕 SOLO si nunca decidió
-      if (permission === "default") {
-        console.log("🔔 Mostrando prompt...");
-        OneSignal.Slidedown.promptPush();
-      }
+      // ✅ SOLO SI YA ESTÁ BIEN REGISTRADO
+      if (isSubscribed && playerId) {
+        console.log("✅ Usuario correctamente registrado");
 
-      // ❌ ya rechazó → no molestar
-      if (permission === "denied") {
-        console.log("🚫 Usuario bloqueó notificaciones");
+        setTimeout(() => {
+          console.log("🔁 Redirigiendo a Streamlit...");
+          window.location.href = "https://pulcho.streamlit.app/";
+        }, 1500);
       }
     });
   </script>
