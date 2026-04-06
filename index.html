@@ -16,42 +16,59 @@
 
       console.log("🚀 OneSignal iniciado");
 
-      // 🔥 ESPERAR a que OneSignal esté listo DE VERDAD
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
       const permission = OneSignal.Notifications.permission;
-      const subscription = OneSignal.User.PushSubscription;
+      const isSubscribed = OneSignal.User.PushSubscription.optedIn;
 
       console.log("Permiso:", permission);
-      console.log("Suscripción:", subscription);
-
-      // 🔥 ESTE ES EL DATO CLAVE
-      const playerId = subscription.id;
-      const isSubscribed = subscription.optedIn;
-
-      console.log("Player ID:", playerId);
       console.log("Suscrito:", isSubscribed);
 
-      // 🚨 SI NO HAY ID → NO EXISTES
-      if (!playerId) {
-        console.log("❌ No hay player_id → no registrado");
-
-        if (permission === "default") {
-          console.log("🔔 Mostrando prompt...");
-          OneSignal.Slidedown.promptPush();
-        }
-
-        return;
+      // 🔔 Mostrar prompt si no ha decidido
+      if (permission === "default") {
+        console.log("🔔 Mostrando prompt...");
+        OneSignal.Slidedown.promptPush();
       }
 
-      // ✅ SOLO SI YA ESTÁ BIEN REGISTRADO
-      if (isSubscribed && playerId) {
-        console.log("✅ Usuario correctamente registrado");
+      // 🔥 DEBUG: ver estado real después de unos segundos
+      setTimeout(() => {
+        const id = OneSignal.User.PushSubscription.id;
+        const ua = navigator.userAgent;
+
+        alert(
+          "Permission: " + permission +
+          "\nSubscribed: " + isSubscribed +
+          "\nID: " + id +
+          "\nUA: " + ua
+        );
+      }, 4000);
+
+      // 🔥 Evento REAL cuando cambia la suscripción
+      OneSignal.User.PushSubscription.addEventListener("change", () => {
+        const finalId = OneSignal.User.PushSubscription.id;
+        const optedIn = OneSignal.User.PushSubscription.optedIn;
+
+        console.log("🔄 Cambio detectado");
+        console.log("ID final:", finalId);
+
+        alert("🔄 Subscription lista:\nID: " + finalId);
+
+        if (optedIn && finalId) {
+          console.log("✅ Registro completo");
+
+          setTimeout(() => {
+            window.location.href = "https://pulcho.streamlit.app/";
+          }, 2000);
+        }
+      });
+
+      // 🔁 Caso: ya estaba suscrito
+      const existingId = OneSignal.User.PushSubscription.id;
+
+      if (isSubscribed && existingId) {
+        console.log("✅ Ya estaba suscrito");
 
         setTimeout(() => {
-          console.log("🔁 Redirigiendo a Streamlit...");
           window.location.href = "https://pulcho.streamlit.app/";
-        }, 1500);
+        }, 2000);
       }
     });
   </script>
