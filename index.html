@@ -16,42 +16,47 @@
 
       console.log("🚀 OneSignal iniciado");
 
-      const permission = OneSignal.Notifications.permission;
-      const isSubscribed = OneSignal.User.PushSubscription.optedIn;
+      // 🔥 LEER ESTADO REAL (con await)
+      let permission = await OneSignal.Notifications.permission;
+      let isSubscribed = await OneSignal.User.PushSubscription.optedIn;
+      let id = await OneSignal.User.PushSubscription.id;
 
       console.log("Permiso:", permission);
       console.log("Suscrito:", isSubscribed);
+      console.log("ID:", id);
 
       // 🔔 Mostrar prompt si no ha decidido
       if (permission === "default") {
         console.log("🔔 Mostrando prompt...");
-        OneSignal.Slidedown.promptPush();
+        await OneSignal.Slidedown.promptPush();
       }
 
-      // 🔥 DEBUG: ver estado real después de unos segundos
-      setTimeout(() => {
-        const id = OneSignal.User.PushSubscription.id;
+      // 🔥 DEBUG REAL (no valores viejos)
+      setTimeout(async () => {
+        const freshPermission = await OneSignal.Notifications.permission;
+        const freshSubscribed = await OneSignal.User.PushSubscription.optedIn;
+        const freshId = await OneSignal.User.PushSubscription.id;
         const ua = navigator.userAgent;
 
         alert(
-          "Permission: " + permission +
-          "\nSubscribed: " + isSubscribed +
-          "\nID: " + id +
+          "Permission: " + freshPermission +
+          "\nSubscribed: " + freshSubscribed +
+          "\nID: " + freshId +
           "\nUA: " + ua
         );
       }, 4000);
 
       // 🔥 Evento REAL cuando cambia la suscripción
-      OneSignal.User.PushSubscription.addEventListener("change", () => {
-        const finalId = OneSignal.User.PushSubscription.id;
-        const optedIn = OneSignal.User.PushSubscription.optedIn;
+      OneSignal.User.PushSubscription.addEventListener("change", async () => {
+        const finalId = await OneSignal.User.PushSubscription.id;
+        const finalOpt = await OneSignal.User.PushSubscription.optedIn;
 
         console.log("🔄 Cambio detectado");
         console.log("ID final:", finalId);
 
         alert("🔄 Subscription lista:\nID: " + finalId);
 
-        if (optedIn && finalId) {
+        if (finalOpt && finalId) {
           console.log("✅ Registro completo");
 
           setTimeout(() => {
@@ -60,10 +65,8 @@
         }
       });
 
-      // 🔁 Caso: ya estaba suscrito
-      const existingId = OneSignal.User.PushSubscription.id;
-
-      if (isSubscribed && existingId) {
+      // 🔁 Caso: ya estaba suscrito (usar valores reales)
+      if (isSubscribed && id) {
         console.log("✅ Ya estaba suscrito");
 
         setTimeout(() => {
