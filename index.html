@@ -9,66 +9,74 @@
     window.OneSignalDeferred = window.OneSignalDeferred || [];
 
     OneSignalDeferred.push(async function(OneSignal) {
+
+      console.log("🚀 Iniciando OneSignal...");
+
       await OneSignal.init({
         appId: "75e8a57e-649c-49bc-beed-addc802ac1c9",
         notifyButton: { enable: true }
       });
 
-      console.log("🚀 OneSignal iniciado");
+      console.log("✅ OneSignal inicializado");
 
-      // 🔥 estado real
-      let optedIn = await OneSignal.User.PushSubscription.optedIn;
-      let id = await OneSignal.User.PushSubscription.id;
+      // 🔥 función robusta para leer estado REAL
+      async function getEstadoReal() {
+        return {
+          permission: OneSignal.Notifications.permission,
+          optedIn: OneSignal.User.PushSubscription.optedIn,
+          id: OneSignal.User.PushSubscription.id
+        };
+      }
 
-      console.log("Suscrito:", optedIn);
-      console.log("ID:", id);
+      // 🔥 esperar a que OneSignal termine de hidratarse
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // 🔔 FORZAR PROMPT SI NO ESTÁ SUSCRITO
-      if (!optedIn) {
-        console.log("🔔 Forzando prompt...");
+      let estado = await getEstadoReal();
+
+      console.log("📊 Estado inicial:");
+      console.log("Permiso:", estado.permission);
+      console.log("Suscrito:", estado.optedIn);
+      console.log("ID:", estado.id);
+
+      // 🔔 SOLO mostrar prompt si nunca ha decidido
+      if (estado.permission === "default") {
+        console.log("🔔 Mostrando prompt...");
         await OneSignal.Slidedown.promptPush();
       }
 
-      // 🔥 DEBUG REAL (espera a que OneSignal respire)
-      setTimeout(async () => {
-        const freshOpt = await OneSignal.User.PushSubscription.optedIn;
-        const freshId = await OneSignal.User.PushSubscription.id;
-        const ua = navigator.userAgent;
-
-        alert(
-          "Subscribed: " + freshOpt +
-          "\nID: " + freshId +
-          "\nUA: " + ua
-        );
-      }, 4000);
-
-      // 🔄 CUANDO SE COMPLETE LA SUSCRIPCIÓN
+      // 🔄 escuchar cambio REAL de suscripción
       OneSignal.User.PushSubscription.addEventListener("change", async () => {
-        const finalId = await OneSignal.User.PushSubscription.id;
-        const finalOpt = await OneSignal.User.PushSubscription.optedIn;
+        console.log("🔄 Cambio detectado en suscripción...");
 
-        console.log("🔄 Cambio detectado");
-        console.log("ID final:", finalId);
+        // esperar estabilización
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        alert("✅ Subscription lista:\nID: " + finalId);
+        const nuevoEstado = await getEstadoReal();
 
-        if (finalOpt && finalId) {
-          console.log("🚀 Redirigiendo...");
+        console.log("📊 Estado actualizado:");
+        console.log("Suscrito:", nuevoEstado.optedIn);
+        console.log("ID:", nuevoEstado.id);
+
+        if (nuevoEstado.optedIn && nuevoEstado.id) {
+          console.log("✅ Usuario registrado correctamente");
 
           setTimeout(() => {
+            console.log("🔁 Redirigiendo a Streamlit...");
             window.location.href = "https://pulcho.streamlit.app/";
-          }, 2000);
+          }, 1500);
         }
       });
 
-      // 🔁 SI YA ESTABA SUSCRITO
-      if (optedIn && id) {
-        console.log("✅ Ya estaba suscrito");
+      // 🔁 caso: ya estaba suscrito desde antes
+      if (estado.optedIn && estado.id) {
+        console.log("✅ Usuario ya estaba suscrito");
 
         setTimeout(() => {
+          console.log("🔁 Redirigiendo a Streamlit...");
           window.location.href = "https://pulcho.streamlit.app/";
-        }, 2000);
+        }, 1500);
       }
+
     });
   </script>
 </head>
